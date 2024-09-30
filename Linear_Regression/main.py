@@ -12,7 +12,7 @@ from utils import (add_intercept, display_statistics, load_and_split_data,
                    select_lambda, standardize_data)
 
 # Parameters
-DATASET_PATH = "prostate_cancer.csv"
+DATASET_PATH = "data/prostate_cancer.csv"
 TARGET_COLUMN = "lpsa"
 BINARY_COLUMNS = ["svi"]
 TEST_SIZE = 0.1
@@ -32,7 +32,7 @@ def run_linear_regression(X_train, X_test, y_train, y_test):
 
     train_mse = mean_squared_error(y_train, y_train_pred)
     test_mse = mean_squared_error(y_test, y_test_pred)
-    print(f"Train MSE: {train_mse:.4f}")
+    # print(f"Train MSE: {train_mse:.4f}")
     print(f"Test MSE: {test_mse:.4f}")
 
     std_errors, z_scores = model.calculate_statistics(

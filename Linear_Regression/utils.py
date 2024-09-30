@@ -15,10 +15,14 @@ def mean_squared_error(y_true, y_pred):
 def load_and_split_data(filepath, target_col, test_size=0.1, val_size=0.1):
     data = pd.read_csv(filepath)
     y = data[target_col]
-    X = data.drop([target_col, "train"], axis=1)
+    X = data.drop([target_col], axis=1)
 
-    X = X.apply(pd.to_numeric, errors="coerce")
-    X = X.dropna(axis=1)
+    # Check if 'train' column exists and drop it if present
+    if "train" in X.columns:
+        X = X.drop("train", axis=1)
+
+    X = X.apply(pd.to_numeric, errors="coerce") # Convert to numeric, replacing any non-numeric values with NaN
+    X = X.dropna(axis=1) # Drop any columns with NaN values
 
     X_train, X_temp, y_train, y_temp = train_test_split(
         X, y, test_size=test_size + val_size, random_state=42
@@ -30,7 +34,7 @@ def load_and_split_data(filepath, target_col, test_size=0.1, val_size=0.1):
     return X_train, X_val, X_test, y_train, y_val, y_test
 
 
-def standardize_data(X_train, X_test, X_val=None, binary_cols=None):
+def standardize_data(X_train, X_test=None, X_val=None, binary_cols=None):
     binary_cols = binary_cols or []
 
     for col in X_train.columns:
@@ -38,7 +42,8 @@ def standardize_data(X_train, X_test, X_val=None, binary_cols=None):
             mean = X_train[col].mean()
             std = X_train[col].std()
             X_train[col] = (X_train[col] - mean) / std
-            X_test[col] = (X_test[col] - mean) / std
+            if X_test is not None:
+                X_test[col] = (X_test[col] - mean) / std
             if X_val is not None:
                 X_val[col] = (X_val[col] - mean) / std
 
@@ -46,7 +51,7 @@ def standardize_data(X_train, X_test, X_val=None, binary_cols=None):
 
 
 def add_intercept(X):
-    return np.column_stack([np.ones(X.shape[0]), X])
+    return np.column_stack([np.ones(X.shape[0]), X]) 
 
 
 def display_statistics(column_names, coefficients, std_errors, z_scores):
@@ -62,7 +67,7 @@ def display_statistics(column_names, coefficients, std_errors, z_scores):
 
 
 def plot_correlation_matrix(X_train):
-    correlation_matrix = X_train.corr()
+    correlation_matrix = X_train.corr() 
     plt.figure(figsize=(10, 8))
     sns.heatmap(correlation_matrix, annot=True, fmt=".3f")
     plt.title("Correlation Matrix (Training Set)")
@@ -98,8 +103,8 @@ def plot_ridge_coefficients(X, y, lambda_values, feature_names):
         [
             np.trace(
                 X @ np.linalg.inv(X.T @ X + lambda_param * np.eye(X.shape[1])) @ X.T
-            )
-            for lambda_param in lambda_values
+            )  # 3.50 calculate df(λ)
+            for lambda_param in lambda_values  # effective parameter over regularization
         ]
     )
 
@@ -137,7 +142,7 @@ def plot_lasso_coefficients(X, y, alphas, feature_names):
 
     plt.figure(figsize=(12, 8))
 
-    s_values = np.sum(np.abs(coefs), axis=1) / np.sum(np.abs(coefs[0]))
+    s_values = np.sum(np.abs(coefs), axis=1) / np.sum(np.abs(coefs[0])) 
 
     for i, feature in enumerate(feature_names):
         plt.plot(s_values, coefs[:, i], label=feature)

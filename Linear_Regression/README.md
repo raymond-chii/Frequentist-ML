@@ -2,15 +2,71 @@
 
 ## Overview
 
-This project involves applying various regression techniques (Linear, Ridge, and Lasso) to two datasets: a prostate cancer dataset and a South African heart disease dataset. The goal was to compare the performance of these methods, understand the relationships between various predictors and the target variables, and explore the impact of feature engineering.
+This project involves applying three regression techniques (Linear, Ridge, and Lasso) to two datasets: a prostate cancer dataset and a South African heart disease dataset. The goal was to gain familiarity with using the models and comparing the performance of these methods, understand the relationships between various predictors and the target variables.
+
+## Project Structure
+
+```
+project_root/
+│
+├── data/
+│   ├── prostate_cancer.csv
+│   └── south_african_heart_disease.csv
+│
+├── results/
+│   ├── lasso_coefficients_cancer.png
+│   ├── lasso_coefficients_heart.png
+│   ├── ridge_coefficients_cancer.png
+│   └── ridge_coefficients_heart.png
+│
+├── main.py
+├── new_main.py
+├── linear_regression.py
+├── ridge_regression.py
+├── lasso_regression.py
+├── utils.py
+├── requirements.txt
+└── README.md
+```
+
+## Requirements
+
+To run this project, you need Python 3.7+ and the following libraries:
+
+- numpy
+- pandas
+- scikit-learn
+- matplotlib
+- seaborn
+
+You can install these dependencies using the following command:
+
+```
+pip install -r requirements.txt
+```
+
+## How to Run
+
+1. Ensure you have all the required libraries installed.
+2. Place the dataset CSV files in the `data/` directory.
+3. To run the analysis on the prostate cancer dataset:
+   ```
+   python main.py
+   ```
+4. To run the analysis on the heart disease dataset:
+   ```
+   python new_main.py
+   ```
+5. The results, including graphs, will be saved in the `results/` directory.
 
 ## Datasets
 
-Both datasets were obtained from [https://hastie.su.domains/ElemStatLearn/data.html](https://hastie.su.domains/ElemStatLearn/data.html).
+Both datasets were obtained from [https://hastie.su.domains/ElemStatLearn/data.html](https://hastie.su.domains/ElemStatLearn/data.html). Dataset split: 80% training, 10% testing, 10% validation
 
 1. Prostate Cancer Dataset
    - Target variable: lpsa (log of prostate-specific antigen)
    - Features: lcavol, lweight, age, lbph, svi, lcp, gleason, pgg45
+   - Train: train (dropped)
 
 2. South African Heart Disease Dataset
    - Target variable: chd (coronary heart disease)
@@ -30,6 +86,7 @@ For each method, the data was split into training, validation, and test sets. Th
 
 1. Linear Regression
    - Test MSE: 0.4137
+   - Train MSE: 0.4754
    - Most significant predictors: lcavol, svi, lweight
 
 2. Ridge Regression
@@ -45,6 +102,7 @@ For each method, the data was split into training, validation, and test sets. Th
 
 1. Linear Regression
    - Test MSE: 0.1810
+   - Train MSE: 0.1796
    - Most significant predictors: age, ldl, typea
 
 2. Ridge Regression
@@ -55,7 +113,7 @@ For each method, the data was split into training, validation, and test sets. Th
    - Best alpha (lambda): 0.0095
    - Test MSE: 0.1797
 
-### Feature Engineering (Prostate Cancer Dataset)
+### Extra Credit (Prostate Cancer Dataset)
 
 Custom features added:
 - lcavol_squared: square of log cancer volume
@@ -78,17 +136,17 @@ Results with Ridge Regression:
 
 - Ridge regression helped prevent overfitting, especially with the cancer dataset.
 - The impact of regularization was more pronounced in the cancer dataset than in the heart disease dataset.
-- With custom features, Ridge regression showed improved performance on the cancer dataset, indicating that the added features captured important nonlinear relationships.
 
 ### Lasso Regression
 
 - Lasso regression performed well and offered feature selection capabilities.
 - For the heart disease dataset, Lasso slightly outperformed the other methods, suggesting it effectively selected relevant features.
 
-### Feature Engineering
+### Extra Credit
 
 - The addition of custom features (lcavol_squared, lcavol_pgg45, and age_lbph) to the cancer dataset improved the model's performance significantly.
 - The improvement in both MSE and R2 indicates that these engineered features captured important nonlinear relationships and interactions between predictors.
+- With custom features, Ridge regression showed improved performance on the cancer dataset, indicating that the added features captured important nonlinear relationships.
 
 ## Interpretation of Graphs
 
@@ -109,12 +167,12 @@ Results with Ridge Regression:
 
 2. Value of Regularization: Both Ridge and Lasso regression showed how regularization can help prevent overfitting and improve model performance, especially in the cancer dataset.
 
-3. Impact of Feature Engineering: The custom features added to the cancer dataset significantly improved model performance, highlighting the importance of domain knowledge and creative feature creation in predictive modeling.
+3. Impact of Feature Engineering: The custom features added to the cancer dataset improved model performance, highlighting the importance of domain knowledge in predictive modeling.
 
 4. Dataset Characteristics Matter: The effectiveness of different regression techniques varied between the two datasets, emphasizing the importance of trying multiple approaches and not relying on a one-size-fits-all solution.
 
 5. Interpretability vs. Performance: While more complex models (like those with engineered features) can offer better performance, they may come at the cost of reduced interpretability. It's important to balance these factors based on the specific needs of the project.
 
-6. Visualization Aids Understanding: The coefficient profile plots for Lasso and Ridge regression provided valuable insights into feature importance and the impact of regularization, demonstrating the value of visualization in understanding model behavior.
+6. Visualization Understanding: The coefficient profile plots for Lasso and Ridge regression provided insights into feature importance and the impact of regularization, demonstrating the value of visualization in understanding model behavior.
 
 In conclusion, this project demonstrated the nuances of applying different regression techniques to real-world datasets. It highlighted the importance of feature engineering, the power of regularization, and the need for a thoughtful approach to model selection and evaluation.

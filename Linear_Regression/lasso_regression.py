@@ -15,5 +15,5 @@ class LassoRegression:
         return self.model.predict(X)
 
     @property
-    def coefficients(self):
+    def coefficients(self):  # @property decorator
         return self.model.coef_

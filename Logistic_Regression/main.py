@@ -1,102 +1,129 @@
 import numpy as np
 import pandas as pd
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import StandardScaler
 
+from l1_logistic_regression import L1RegularizedLogisticRegression
 from logistic_regression import LogisticRegression
-from utils import (evaluate_model, forward_step_selection, load_and_split_data,
-                   plot_confusion_matrix, plot_scatterplot_matrix,
-                   preprocess_data, select_lambda)
+from model_selection import forward_step_selection, select_lambda
+from utils import load_and_split_data, logger, plot_feature_importances
+
+# Parameters
+DATASET_PATH = "data/south_african_heart_disease.csv"
+TARGET_COLUMN = "chd"
+TEST_SIZE = 0.1
+VAL_SIZE = 0.1
+LAMBDA_VALUES = np.logspace(-5, 5, 100)  # Wider range, more values
+LEARNING_RATE = 0.05  # Slightly higher learning rate
 
 
 def main():
-    # Load and split the data
-    filepath = "data/south_african_heart_disease.csv"
-    target_col = "chd"
-    X_train, X_val, X_test, y_train, y_val, y_test = load_and_split_data(
-        filepath, target_col
-    )
+    try:
+        # Load and prepare data
+        X_train, X_val, X_test, y_train, y_val, y_test = load_and_split_data(
+            DATASET_PATH, TARGET_COLUMN, TEST_SIZE, VAL_SIZE
+        )
 
-    print("Data loaded and split.")
-    print(f"Training set shape: {X_train.shape}")
-    print(f"Validation set shape: {X_val.shape}")
-    print(f"Test set shape: {X_test.shape}")
+        # Preprocess the data
+        scaler = StandardScaler()
+        X_train_scaled = pd.DataFrame(
+            scaler.fit_transform(X_train), columns=X_train.columns
+        )
+        X_val_scaled = pd.DataFrame(scaler.transform(X_val), columns=X_val.columns)
+        X_test_scaled = pd.DataFrame(scaler.transform(X_test), columns=X_test.columns)
 
-    # Plot the scatterplot matrix
-    data = pd.read_csv(filepath)
-    plot_scatterplot_matrix(data, target_col)
+        logger.info("Data loaded, split, and preprocessed.")
+        logger.info(f"Training set shape: {X_train.shape}")
+        logger.info(f"Validation set shape: {X_val.shape}")
+        logger.info(f"Test set shape: {X_test.shape}")
 
-    # Preprocess the data
-    X_train_scaled, X_val_scaled, X_test_scaled = preprocess_data(
-        X_train, X_val, X_test
-    )
-    print("Data preprocessed and scaled.")
+        # Unregularized model
+        logger.info("--- Unregularized Logistic Regression ---")
+        unregularized_model = LogisticRegression(learning_rate=LEARNING_RATE)
+        unregularized_model.fit(X_train_scaled, y_train)
+        y_pred_test = unregularized_model.predict(X_test_scaled)
+        unregularized_accuracy = accuracy_score(y_test, y_pred_test)
+        logger.info(f"Unregularized Model Accuracy: {unregularized_accuracy:.4f}")
 
-    # Train the unregularized model
-    unregularized_model = LogisticRegression(learning_rate=0.1)
-    unregularized_model.fit(X_train_scaled.values, y_train.values)
-    print("Unregularized model trained.")
+        # Stepwise feature selection
+        logger.info("--- Stepwise Feature Selection ---")
+        selected_features = forward_step_selection(
+            X_train_scaled,
+            y_train,
+            X_val_scaled,
+            y_val,
+            min_improvement=0.001,
+            model_class=LogisticRegression,
+        )
+        logger.info(f"Selected features: {selected_features}")
 
-    # Make predictions and evaluate the unregularized model
-    y_pred_unregularized = unregularized_model.predict(X_test_scaled.values)
-    accuracy_unregularized, conf_matrix_unregularized = evaluate_model(
-        y_test, y_pred_unregularized
-    )
+        stepwise_model = LogisticRegression(learning_rate=LEARNING_RATE)
+        stepwise_model.fit(X_train_scaled[selected_features], y_train)
+        y_pred_test = stepwise_model.predict(X_test_scaled[selected_features])
+        stepwise_accuracy = accuracy_score(y_test, y_pred_test)
+        logger.info(f"Stepwise Model Accuracy: {stepwise_accuracy:.4f}")
 
-    print("\nUnregularized Model Results:")
-    print(f"Accuracy: {accuracy_unregularized:.4f}")
-    print("Coefficients:", unregularized_model.theta)
-    plot_confusion_matrix(conf_matrix_unregularized)
+        # L2 regularized model
+        logger.info("--- L2 Regularized Logistic Regression ---")
+        best_lambda = select_lambda(
+            X_train_scaled,
+            y_train,
+            X_val_scaled,
+            y_val,
+            LAMBDA_VALUES,
+            LogisticRegression,
+        )
+        logger.info(f"Best lambda: {best_lambda}")
 
-    # Implement stepwise feature selection
-    selected_features = forward_step_selection(X_train_scaled, y_train, X_val_scaled, y_val)
-    print(f"Selected features: {selected_features}")
+        l2_model = LogisticRegression(
+            learning_rate=LEARNING_RATE, lambda_param=best_lambda
+        )
+        l2_model.fit(X_train_scaled, y_train, regularized=True)
+        y_pred_test = l2_model.predict(X_test_scaled)
+        l2_accuracy = accuracy_score(y_test, y_pred_test)
+        logger.info(f"L2 Regularized Model Accuracy: {l2_accuracy:.4f}")
 
-    # Train model with selected features
-    stepwise_model = LogisticRegression(learning_rate=0.1)
-    stepwise_model.fit(X_train_scaled[selected_features].values, y_train.values)
-    print("Stepwise model trained.")
+        # L1 regularized model
+        logger.info("--- L1 Regularized Logistic Regression ---")
+        best_lambda = select_lambda(
+            X_train_scaled,
+            y_train,
+            X_val_scaled,
+            y_val,
+            LAMBDA_VALUES,
+            L1RegularizedLogisticRegression,
+        )
+        logger.info(f"Best lambda: {best_lambda}")
 
-    # Evaluate stepwise model
-    y_pred_stepwise = stepwise_model.predict(X_test_scaled[selected_features].values)
-    accuracy_stepwise, conf_matrix_stepwise = evaluate_model(
-        y_test, y_pred_stepwise
-    )
+        l1_model = L1RegularizedLogisticRegression(
+            learning_rate=LEARNING_RATE, lambda_param=best_lambda
+        )
+        l1_model.fit(X_train_scaled, y_train)
+        y_pred_test = l1_model.predict(X_test_scaled)
+        l1_accuracy = accuracy_score(y_test, y_pred_test)
+        logger.info(f"L1 Regularized Model Accuracy: {l1_accuracy:.4f}")
 
-    print("\nStepwise Model Results:")
-    print(f"Accuracy: {accuracy_stepwise:.4f}")
-    print("Coefficients:", stepwise_model.theta)
-    plot_confusion_matrix(conf_matrix_stepwise)
+        # Count non-zero features
+        non_zero_features = np.sum(l1_model.theta != 0) - 1  # Subtract 1 for bias term
+        logger.info(f"Number of non-zero features: {non_zero_features}")
 
-    # Implement L2 regularized logistic regression
-    print("\nSelecting best lambda for L2 regularization...")
-    best_lambda = select_lambda(X_train_scaled, y_train, X_val_scaled, y_val)
-    print(f"Best lambda: {best_lambda}")
+        # Print comparison table
+        logger.info("\nModel Comparison:")
+        logger.info("Model\t\t\tAccuracy")
+        logger.info("---------------------------------")
+        logger.info(f"Unregularized\t\t{unregularized_accuracy:.4f}")
+        logger.info(f"Stepwise\t\t{stepwise_accuracy:.4f}")
+        logger.info(f"L1 Regularized\t\t{l1_accuracy:.4f}")
+        logger.info(f"L2 Regularized\t\t{l2_accuracy:.4f}")
 
-    l2_model = LogisticRegression(learning_rate=0.1, lambda_param=best_lambda)
-    l2_model.fit_l2(X_train_scaled.values, y_train.values)
-    print("L2 model trained.")
+        # Plot feature importances
+        plot_feature_importances(unregularized_model, X_train.columns)
+        plot_feature_importances(l2_model, X_train.columns)
+        plot_feature_importances(l1_model, X_train.columns)
 
-    y_pred_l2 = l2_model.predict(X_test_scaled.values)
-    accuracy_l2, conf_matrix_l2 = evaluate_model(
-        y_test, y_pred_l2
-    )
+    except Exception as e:
+        logger.error(f"An error occurred: {str(e)}", exc_info=True)
 
-    print("\nL2 Model Results:")
-    print(f"Accuracy: {accuracy_l2:.4f}")
-    print("Coefficients:", l2_model.theta)
-    plot_confusion_matrix(conf_matrix_l2)
-
-    # Print the baseline accuracy (proportion of the majority class)
-    baseline_accuracy = max(data["chd"].mean(), 1 - data["chd"].mean())
-    print(f"\nBaseline Accuracy: {baseline_accuracy:.4f}")
-
-    # Create a table comparing the accuracies of all models
-    print("\nModel Comparison:")
-    print("Model\t\t\tAccuracy")
-    print("---------------------------------")
-    print(f"Baseline\t\t{baseline_accuracy:.4f}")
-    print(f"Unregularized\t\t{accuracy_unregularized:.4f}")
-    print(f"Stepwise\t\t{accuracy_stepwise:.4f}")
-    print(f"L2 Regularized\t\t{accuracy_l2:.4f}")
 
 if __name__ == "__main__":
     main()

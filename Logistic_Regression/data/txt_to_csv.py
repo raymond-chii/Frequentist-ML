@@ -8,17 +8,16 @@ def convert_txt_to_csv(input_file, output_file):
         csv_writer = csv.writer(csv_file)
 
         # Read and write the header
-        header = next(txt_file).strip().split(",")
-        csv_writer.writerow(header[1:])  # Skip the 'row.names' column
+        header = next(txt_file).strip().split(",") # Skip the 'row.names' column
 
         # Read and write the data rows
         for line in txt_file:
             data = line.strip().split(",")
-            csv_writer.writerow(data[1:])  # Skip the first column (row number)
+            csv_writer.writerow(data)  # Skip the first column (row number)
 
 
 if __name__ == "__main__":
-    input_file = "south_african_heart_disease.txt"
-    output_file = "south_african_heart_disease.csv"
+    input_file = "datatest.txt"
+    output_file = "OccupancyDetection.csv"
     convert_txt_to_csv(input_file, output_file)
     print(f"Conversion complete. CSV file saved as {output_file}")
